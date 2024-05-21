@@ -1,0 +1,417 @@
+{
+  "__inputs": [],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.1.5"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "4.0.2"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "traces",
+      "name": "Traces",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.1.5",
+      "targets": [
+        {
+          "builderOptions": {
+            "columns": [
+              {
+                "hint": "trace_id",
+                "name": "TraceId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_span_id",
+                "name": "SpanId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_parent_span_id",
+                "name": "ParentSpanId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_service_name",
+                "name": "ServiceName",
+                "type": "LowCardinality(String)"
+              },
+              {
+                "hint": "trace_operation_name",
+                "name": "SpanName",
+                "type": "LowCardinality(String)"
+              },
+              {
+                "hint": "time",
+                "name": "StartTime",
+                "type": "DateTime64(9)"
+              },
+              {
+                "hint": "trace_duration_time",
+                "name": "Duration",
+                "type": "Int64"
+              },
+              {
+                "hint": "trace_tags",
+                "name": "SpanAttributes",
+                "type": "Map(LowCardinality(String), String)"
+              },
+              {
+                "hint": "trace_service_tags",
+                "name": "ResourceAttributes",
+                "type": "Map(LowCardinality(String), String)"
+              }
+            ],
+            "database": "$Database",
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "time",
+                "key": "",
+                "operator": "IS ANYTHING",
+                "type": "datetime"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "trace_parent_span_id",
+                "key": "",
+                "operator": "IS EMPTY",
+                "type": "string",
+                "value": ""
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "trace_duration_time",
+                "key": "",
+                "operator": ">",
+                "type": "UInt64",
+                "value": 0
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "trace_service_name",
+                "key": "",
+                "operator": "IS ANYTHING",
+                "type": "string",
+                "value": ""
+              }
+            ],
+            "limit": 1000,
+            "meta": {
+              "isTraceIdMode": false,
+              "otelVersion": "latest",
+              "traceDurationUnit": "microseconds",
+              "traceId": ""
+            },
+            "mode": "list",
+            "orderBy": [
+              {
+                "default": true,
+                "dir": "DESC",
+                "hint": "time",
+                "name": ""
+              },
+              {
+                "default": true,
+                "dir": "DESC",
+                "hint": "trace_duration_time",
+                "name": ""
+              }
+            ],
+            "queryType": "traces",
+            "table": "$Table"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${datasource}"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "4.0.2",
+          "rawSql": "SELECT \"TraceId\" as traceID, \"ServiceName\" as serviceName, \"SpanName\" as operationName, \"StartTime\" as startTime, intDivOrZero(\"Duration\", 1000) as \"duration(ms)\" FROM \"$Database\".\"$Table\" WHERE ( ParentSpanId = '' ) AND ( Duration > 0 ) ORDER BY StartTime DESC, Duration DESC LIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Traces",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "targets": [
+        {
+          "builderOptions": {
+            "columns": [
+              {
+                "hint": "trace_id",
+                "name": "TraceId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_span_id",
+                "name": "SpanId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_parent_span_id",
+                "name": "ParentSpanId",
+                "type": "String"
+              },
+              {
+                "hint": "trace_service_name",
+                "name": "ServiceName",
+                "type": "LowCardinality(String)"
+              },
+              {
+                "hint": "trace_operation_name",
+                "name": "SpanName",
+                "type": "LowCardinality(String)"
+              },
+              {
+                "hint": "time",
+                "name": "StartTime",
+                "type": "DateTime64(9)"
+              },
+              {
+                "hint": "trace_duration_time",
+                "name": "Duration",
+                "type": "Int64"
+              },
+              {
+                "hint": "trace_tags",
+                "name": "SpanAttributes",
+                "type": "Map(LowCardinality(String), String)"
+              },
+              {
+                "hint": "trace_service_tags",
+                "name": "ResourceAttributes",
+                "type": "Map(LowCardinality(String), String)"
+              }
+            ],
+            "database": "$Database",
+            "filters": [],
+            "limit": 1000,
+            "meta": {
+              "isTraceIdMode": true,
+              "minimized": false,
+              "otelVersion": "latest",
+              "traceDurationUnit": "microseconds",
+              "traceId": "$TraceID"
+            },
+            "mode": "list",
+            "orderBy": [],
+            "queryType": "traces",
+            "table": "$Table"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${datasource}"
+          },
+          "editorType": "builder",
+          "format": 3,
+          "pluginVersion": "4.0.2",
+          "rawSql": "SELECT \"TraceId\" as traceID, \"SpanId\" as spanID, \"ParentSpanId\" as parentSpanID, \"ServiceName\" as serviceName, \"SpanName\" as operationName, \"StartTime\" as startTime, intDivOrZero(\"Duration\", 1000) as duration, arrayMap(key -> map('key', key, 'value',\"SpanAttributes\"[key]), mapKeys(\"SpanAttributes\")) as tags, arrayMap(key -> map('key', key, 'value',\"ResourceAttributes\"[key]), mapKeys(\"ResourceAttributes\")) as serviceTags FROM \"$Database\".\"$Table\" WHERE traceID = '$TraceID' LIMIT 1000",
+          "refId": "Trace ID"
+        }
+      ],
+      "title": "Trace Details",
+      "type": "traces"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "MyScale",
+    "Trace"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "MyScale Cluster",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "grafana-clickhouse-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${datasource}"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "Database",
+        "options": [],
+        "query": "SHOW DATABASES",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${datasource}"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "Table",
+        "options": [],
+        "query": "SHOW TABLES FROM $Database",
+        "refresh": 2,
+        "regex": "/^(?!system\\.).*/",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${datasource}"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "TraceID",
+        "options": [],
+        "query": "SELECT DISTINCT TraceId FROM $Database.$Table",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "MyScale Trace Dashboard",
+  "version": 1,
+  "weekStart": ""
+}
