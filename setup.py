@@ -2,8 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="myscale_callback",
-    version="0.1.0",
+    version="0.2.0",
     description="A package for MyScale Callback Handler",
+    author="Xu Jing",
+    author_email="xuj@myscale.com",
     url="https://github.com/myscale/myscale_callback.git",
     packages=find_packages(),
     install_requires=[
