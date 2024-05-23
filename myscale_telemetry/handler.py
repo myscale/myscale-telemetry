@@ -71,11 +71,12 @@ def _convert_message_to_dict(message: BaseMessage, prefix_key: str) -> Dict[str,
     return {}
 
 
-def _extract_resource_attributes(serialized: Dict[str, Any]) -> Dict[str, str]:
+def _extract_resource_attributes(metadata: Dict[str, Any], serialized: Dict[str, Any]) -> Dict[str, str]:
     """Extract resource attributes from serialized data."""
     resource_attributes: Dict[str, str] = {}
 
     flat_dict = flatten_dict(serialized)
+    flat_dict.update(metadata)
     for resource_key, resource_val in flat_dict.items():
         if isinstance(resource_val, str) and resource_val != "":
             resource_attributes.update({resource_key: resource_val})
@@ -233,7 +234,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind=kind,
                 span_attributes=span_attributes,
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
@@ -299,7 +300,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="llm",
                 span_attributes=_extract_span_attributes(prompts, **kwargs),
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
         except Exception as e:
             self._log.exception("An error occurred in on_llm_start: %s", e)
@@ -318,16 +319,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         )
         try:
             span_attributes: Dict[str, str] = {}
-
-            for i, generation in enumerate(response.generations):
-                generation = generation[0]
-                prefix_key = "completions." + str(i) + "."
-                if isinstance(generation, ChatGeneration):
-                    span_attributes.update(
-                        _convert_message_to_dict(generation.message, prefix_key)
-                    )
-                else:
-                    span_attributes[f"{prefix_key}content"] = generation.text
+            has_token = False
 
             if response.llm_output is not None and isinstance(
                 response.llm_output, Dict
@@ -339,6 +331,17 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                     span_attributes["completion_tokens"] = str(
                         token_usage["completion_tokens"]
                     )
+                    has_token = True
+
+            for i, generation in enumerate(response.generations):
+                generation = generation[0]
+                prefix_key = "completions." + str(i) + "."
+                if isinstance(generation, ChatGeneration):
+                    span_attributes.update(
+                        _convert_message_to_dict(generation.message, prefix_key)
+                    )
+                else:
+                    span_attributes[f"{prefix_key}content"] = generation.text
 
             self._task_manager.end_span(
                 span_id=run_id,
@@ -381,7 +384,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="llm",
                 span_attributes=_extract_span_attributes(messages[0], **kwargs),
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
         except Exception as e:
             self._log.exception("An error occurred in on_chat_model_start: %s", e)
@@ -416,7 +419,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="retriever",
                 span_attributes={"query": query},
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
@@ -481,7 +484,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="tool",
                 span_attributes={"input": input_str},
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
