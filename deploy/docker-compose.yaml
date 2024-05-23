@@ -10,9 +10,6 @@ services:
       - '8998:8998'
       - '9363:9363'
       - '9116:9116'
-    networks:
-      myscaledb_network:
-        ipv4_address: 10.0.0.2
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/data:/var/lib/clickhouse
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/log:/var/log/clickhouse-server
@@ -34,14 +31,3 @@ services:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/grafana:/var/lib/grafana
     depends_on:
       - myscaledb
-    networks:
-      myscaledb_network:
-        ipv4_address: 10.0.0.3
-
-networks:
-  myscaledb_network:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.0.0.0/24
