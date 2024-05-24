@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="myscale-telemetry",
-    version="0.3.0",
+    version="0.1.0",
     description="Open-source observability for your LLM application.",
     author="Xu Jing",
     author_email="xuj@myscale.com",
