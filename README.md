@@ -1,4 +1,4 @@
-# MyScale Callback
+# MyScale Telemetry
 
 The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in the [MyScale database](https://myscale.com/). This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
 
