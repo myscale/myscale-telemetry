@@ -107,19 +107,19 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 1. **Add a new ClickHouse Data Source in Grafana:**
 
    In the Grafana Data Source settings, add a new ClickHouse Data Source. Enter the Server Address, Server Port, Username, and Password to match those of your MyScale Cloud/MyScaleDB.
-   ![data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/add_data_source.png)
-   ![config_data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/config_data_source.png)
+   ![data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/add_data_source.png?raw=True)
+   ![config_data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/config_data_source.png?raw=True)
 
 2. **Import the MyScale Trace Dashboard:**
 
-   Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
+   Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json?raw=True).
 
-   ![import_dashboard](https://github.com/myscale/myscale-telemetry/blob/main/assets/import_dashboard.png)
+   ![import_dashboard](https://github.com/myscale/myscale-telemetry/blob/main/assets/import_dashboard.png?raw=True)
 
 3. **Configure the Dashboard:**
 
    After importing, select the MyScale Cluster (ClickHouse Data Source Name), the database name, table name, and TraceID of the trace you want to analyze. The dashboard will then display the Traces Table and the Trace Details Panel of the selected trace.
 
-   ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png)
+   ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png?raw=True)
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
