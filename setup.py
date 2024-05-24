@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="myscale_callback",
-    version="0.2.0",
-    description="A package for MyScale Callback Handler",
+    name="myscale-telemetry",
+    version="0.1.0",
+    description="Open-source observability for your LLM application.",
     author="Xu Jing",
     author_email="xuj@myscale.com",
-    url="https://github.com/myscale/myscale_callback.git",
+    url="https://github.com/myscale/myscale-telemetry",
     packages=find_packages(),
     install_requires=[
         "backoff>=2.2.1",
