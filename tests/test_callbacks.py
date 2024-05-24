@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import MyScale
-from myscale_callback.handler import MyScaleCallbackHandler
+from myscale_telemetry.handler import MyScaleCallbackHandler
 
 logging.config.fileConfig("logging.conf")
 

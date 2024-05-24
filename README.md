@@ -1,13 +1,13 @@
 # MyScale Callback
 
-The MyScale Callback Handler is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in the [MyScale database](https://myscale.com/). This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
+The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in the [MyScale database](https://myscale.com/). This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
 
 ## Installation
 
-Install the MyScale Callback Handler package using pip:
+Install the MyScale Telemetry package using pip:
 
 ```bash
-pip install myscale-callback
+pip install myscale-telemetry
 ```
 
 ## Usage
@@ -17,14 +17,14 @@ Here is an example of how to use the `MyScaleCallbackHandler` with LangChain:
 ```python
 import os
 from operator import itemgetter
-from myscale_callback.handler import MyScaleCallbackHandler
+from myscale_telemetry.handler import MyScaleCallbackHandler
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import MyScale
 from langchain_core.runnables import RunnableConfig
 
-# Set the database configuration through environment variables
+# set up the environment variables for OpenAI and MyScale Cloud/MyScaleDB
 os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_KEY"
 os.environ["MYSCALE_HOST"] = "YOUR_MYSCALE_HOST"
 os.environ["MYSCALE_PORT"] = "YOUR_MYSCALE_PORT"
@@ -52,7 +52,7 @@ chain = (
     | StrOutputParser()
 )
 
-# Set the MyScale callback handler for chain runtime
+# integrate MyScaleCallbackHandler to capture trace data during the chain execution
 chain.invoke({"question": "where did harrison work"}, config=RunnableConfig(
     callbacks=[
         MyScaleCallbackHandler()
@@ -60,7 +60,7 @@ chain.invoke({"question": "where did harrison work"}, config=RunnableConfig(
 ))
 ```
 
-In the default scenario, MyScale Callback generates a `trace_id` for a single Agent call. However, if you wish to integrate the Trace of the LLM call process with a higher-level caller, you can configure the `RunnableConfig` to pass in metadata with `trace_id` as the key during the call, as in the following example:
+In the default scenario, the callback handler generates a `trace_id` for a single Agent call. However, if you wish to integrate the Trace of the LLM call process with a higher-level caller, you can configure the `RunnableConfig` to pass in metadata with `trace_id` as the key during the call, as in the following example:
 ```
 # trace_id obtained from the upper layer, such as request_id of http request
 trace_id = "http-request-id-xxx"
@@ -87,3 +87,36 @@ When invoking `MyScaleCallbackHandler()`, you can specify several parameters to 
 * `upload_interval`: Upload interval in seconds (default: 0.5)
 * `database_name`: Name of the trace database (default: "otel")
 * `table_name`: Name of the trace table (default: "otel_traces")
+
+## Observability
+
+To display trace data collected through the MyScale Telemetry from the LLM Application runtime easily and clearly, we also provide a [Grafana Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
+The dashboard allows users to monitor the status of the LLM Application which is similar to LangSmith, making it easier to debug and improve its performance.
+
+### Requirements
+* [Grafana](https://grafana.com/grafana)
+* [Grafana-clickhouse-datasource Plugin](https://grafana.com/grafana/plugins/grafana-clickhouse-datasource/)
+* [A MyScale Cluster with stored Trace Data](https://myscale.com/)
+
+### Set up the Trace Dashboard
+Once you have Grafana, installed the ClickHouse datasource plugin, and have a MyScale cluster with trace data collected through MyScale Telemetry, follow these steps to set up the MyScale Trace Dashboard in Grafana:
+
+1. **Add a new ClickHouse Data Source in Grafana:**
+
+   In the Grafana Data Source settings, add a new ClickHouse Data Source. The Server Address, Server Port, Username, and Password should correspond to the Host, Port, Username, and Password of the MyScale Cloud/MyScaleDB used.
+   ![data_source](./assets/add_data_source.png)
+   ![config_data_source](./assets/config_data_source.png)
+
+2. **Import the MyScale Trace Dashboard:**
+
+   Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale_callback/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
+
+   ![import_dashboard](./assets/import_dashboard.png)
+
+3. **Configure the Dashboard:**
+
+   After importing, select the MyScale Cluster (ClickHouse Data Source Name), the database name, table name, and TraceID of the trace you want to analyze. The dashboard will then display the Traces Table and the Trace Details Panel of the selected trace.
+
+   ![trace_dashboard_overview](./assets/dashboard.png)
+
+The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
