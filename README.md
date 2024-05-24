@@ -109,7 +109,7 @@ Once you have Grafana, installed the ClickHouse datasource plugin, and have a My
 
 2. **Import the MyScale Trace Dashboard:**
 
-   Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale_callback/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
+   Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
 
    ![import_dashboard](./assets/import_dashboard.png)
 
