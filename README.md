@@ -120,6 +120,6 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 
    After importing, select the MyScale Cluster (ClickHouse Data Source Name), the database name, table name, and TraceID of the trace you want to analyze. The dashboard will then display the Traces Table and the Trace Details Panel of the selected trace.
 
-   ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets//dashboard.png)
+   ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png)
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
