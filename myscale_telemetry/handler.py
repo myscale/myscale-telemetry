@@ -152,6 +152,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         database_name: str = "otel",
         table_name: str = "otel_traces",
         log_level: int = logging.INFO,
+        count_tokens: bool = False,
     ) -> None:
         """Set up the MyScale client and the TaskManager,
         which is responsible for uploading data to the MyScale vector database."""
@@ -186,6 +187,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             database_name=database_name,
             table_name=table_name,
         )
+        self.count_tokens = count_tokens
 
     def on_chain_start(
         self,
@@ -319,20 +321,6 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         )
         try:
             span_attributes: Dict[str, str] = {}
-            has_token = False
-
-            if response.llm_output is not None and isinstance(
-                response.llm_output, Dict
-            ):
-                token_usage = response.llm_output["token_usage"]
-                if token_usage is not None:
-                    span_attributes["prompt_tokens"] = str(token_usage["prompt_tokens"])
-                    span_attributes["total_tokens"] = str(token_usage["total_tokens"])
-                    span_attributes["completion_tokens"] = str(
-                        token_usage["completion_tokens"]
-                    )
-                    has_token = True
-
             for i, generation in enumerate(response.generations):
                 generation = generation[0]
                 prefix_key = "completions." + str(i) + "."
@@ -342,6 +330,20 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                     )
                 else:
                     span_attributes[f"{prefix_key}content"] = generation.text
+
+            if self.count_tokens:
+                pass
+            else:
+                if response.llm_output is not None and isinstance(
+                        response.llm_output, Dict
+                ):
+                    token_usage = response.llm_output["token_usage"]
+                    if token_usage is not None:
+                        span_attributes["prompt_tokens"] = str(token_usage["prompt_tokens"])
+                        span_attributes["total_tokens"] = str(token_usage["total_tokens"])
+                        span_attributes["completion_tokens"] = str(
+                            token_usage["completion_tokens"]
+                        )
 
             self._task_manager.end_span(
                 span_id=run_id,
