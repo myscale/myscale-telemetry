@@ -1,6 +1,6 @@
 # MyScale Telemetry
 
-The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in the [MyScale database](https://myscale.com/). This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
+The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in [MyScaleDB](https://github.com/myscale/MyScaleDB) or ClickHouse. This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
 
 ## Installation
 
@@ -39,7 +39,7 @@ template = """Answer the question based only on the following context:
 
 Question: {question}
 
-"""
+"""python
 prompt = ChatPromptTemplate.from_template(template)
 
 chain = (
@@ -61,7 +61,8 @@ chain.invoke({"question": "where did harrison work"}, config=RunnableConfig(
 ```
 
 In the default scenario, the callback handler generates a `trace_id` for a single Agent call. However, if you wish to integrate the Trace of the LLM call process with a higher-level caller, you can configure the `RunnableConfig` to pass in metadata with `trace_id` as the key during the call, as in the following example:
-```
+
+```python
 # trace_id obtained from the upper layer, such as request_id of http request
 trace_id = "http-request-id-xxx"
 chain.invoke({"question": "where did harrison work"}, config=RunnableConfig(
@@ -76,10 +77,10 @@ chain.invoke({"question": "where did harrison work"}, config=RunnableConfig(
 
 When invoking `MyScaleCallbackHandler()`, you can specify several parameters to customize its behavior. If not specified, the default values will be used.
 
-* `myscale_host`: MyScale database host (can also be set via `MYSCALE_HOST` environment variable)             
-* `myscale_port`: MyScale database port (can also be set via `MYSCALE_PORT` environment variable)             
-* `myscale_username`: MyScale database username (can also be set via `MYSCALE_USERNAME` environment variable) 
-* `myscale_password`: MyScale database password (can also be set via `MYSCALE_PASSWORD` environment variable) 
+* `myscale_host`: MyScale database host (can also be set via `MYSCALE_HOST` environment variable)
+* `myscale_port`: MyScale database port (can also be set via `MYSCALE_PORT` environment variable)
+* `myscale_username`: MyScale database username (can also be set via `MYSCALE_USERNAME` environment variable)
+* `myscale_password`: MyScale database password (can also be set via `MYSCALE_PASSWORD` environment variable)
 * `threads`: Number of upload threads (default: 1)
 * `max_retries`: Maximum number of upload retries (default: 10)
 * `max_batch_size`: Maximum upload batch size (default: 1000)
@@ -94,16 +95,18 @@ To display trace data collected through the MyScale Telemetry from the LLM Appli
 The dashboard allows users to monitor the status of the LLM Application which is similar to LangSmith, making it easier to debug and improve its performance.
 
 ### Requirements
+
 * [Grafana](https://grafana.com/grafana)
-* [Grafana-clickhouse-datasource Plugin](https://grafana.com/grafana/plugins/grafana-clickhouse-datasource/)
-* [A MyScale Cluster with stored Trace Data](https://myscale.com/)
+* [Official ClickHouse data source for Grafana](https://grafana.com/grafana/plugins/grafana-clickhouse-datasource/)
+* A compatible database instance. MyScale Telemetry supports [MyScaleDB](https://github.com/myscale/MyScaleDB), [MyScale Cloud](https://myscale.com/), and ClickHouse.
 
 ### Set up the Trace Dashboard
-Once you have Grafana, installed the ClickHouse datasource plugin, and have a MyScale cluster with trace data collected through MyScale Telemetry, follow these steps to set up the MyScale Trace Dashboard in Grafana:
+
+Once you have Grafana, installed the ClickHouse data source plugin, and have a MyScale cluster with trace data collected through MyScale Telemetry, follow these steps to set up the MyScale Trace Dashboard in Grafana:
 
 1. **Add a new ClickHouse Data Source in Grafana:**
 
-   In the Grafana Data Source settings, add a new ClickHouse Data Source. The Server Address, Server Port, Username, and Password should correspond to the Host, Port, Username, and Password of the MyScale Cloud/MyScaleDB used.
+   In the Grafana Data Source settings, add a new ClickHouse Data Source. Enter the Server Address, Server Port, Username, and Password to match those of your MyScale Cloud/MyScaleDB.
    ![data_source](./assets/add_data_source.png)
    ![config_data_source](./assets/config_data_source.png)
 
