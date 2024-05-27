@@ -39,7 +39,7 @@ template = """Answer the question based only on the following context:
 
 Question: {question}
 
-"""python
+"""
 prompt = ChatPromptTemplate.from_template(template)
 
 chain = (
