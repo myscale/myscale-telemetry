@@ -115,11 +115,13 @@ def _extract_span_attributes(data: Any, **kwargs: Any) -> Dict[str, str]:
 
     return span_attributes
 
-def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
+
+def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
     encoding = tiktoken.get_encoding(encoding_name)
     num_tokens = len(encoding.encode(string))
     return num_tokens
+
 
 class MyScaleCallbackHandler(BaseCallbackHandler):
     """Callback Handler for MyScale.
@@ -140,6 +142,8 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         force_count_tokens (bool): Forces the calculation of LLM token usage,
                                    useful when OpenAI LLM streaming is enabled
                                    and token usage is not returned.
+        encoding_name (str): The name of the encoding used by tiktoken.
+                             This is only relevant if `force_count_tokens` is set to True.
 
     This handler utilizes callback methods to extract various elements such as
     questions, retrieved documents, prompts, and messages from each callback
@@ -162,6 +166,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         table_name: str = "otel_traces",
         log_level: int = logging.INFO,
         force_count_tokens: bool = False,
+        encoding_name: str = "cl100k_base",
     ) -> None:
         """Set up the MyScale client and the TaskManager,
         which is responsible for uploading data to the MyScale vector database."""
@@ -187,6 +192,8 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         )
 
         self.force_count_tokens = force_count_tokens
+        self.encoding_name = encoding_name
+
         self._task_manager = TaskManager(
             client=self.myscale_client,
             threads=threads,
@@ -309,7 +316,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 for i in range(len(prompts)):
                     content_key = "prompts." + str(i) + ".content"
                     if content_key in span_attributes:
-                        prompt_tokens += num_tokens_from_string(span_attributes[content_key])
+                        prompt_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
 
                 span_attributes["prompt_tokens"] = str(prompt_tokens)
 
@@ -355,7 +362,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 for i in range(len(response.generations)):
                     content_key = "completions." + str(i) + ".content"
                     if content_key in span_attributes:
-                        completion_tokens += num_tokens_from_string(span_attributes[content_key])
+                        completion_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
 
                 span_attributes["completion_tokens"] = str(completion_tokens)
             else:
@@ -410,7 +417,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 for i in range(len(messages[0])):
                     content_key = "prompts." + str(i) + ".content"
                     if content_key in span_attributes:
-                        prompt_tokens += num_tokens_from_string(span_attributes[content_key])
+                        prompt_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
 
                 span_attributes["prompt_tokens"] = str(prompt_tokens)
 

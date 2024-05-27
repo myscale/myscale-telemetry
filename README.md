@@ -91,6 +91,15 @@ When invoking `MyScaleCallbackHandler()`, you can specify several parameters to 
 * `database_name`: Name of the trace database (default: "otel")
 * `table_name`: Name of the trace table (default: "otel_traces")
 * `force_count_tokens`: Forces the calculation of LLM token usage, useful when OpenAI LLM streaming is enabled and token usage is not returned (default: False)
+* `encoding_name`: Name of the encoding used by tiktoken. This is only relevant if `force_count_tokens` is set to True (default: cl100k_base)
+
+## Workflow Overview
+
+![workflow](https://github.com/myscale/myscale-telemetry/blob/main/assets/workflow.png?raw=True)
+MyScale Telemetry automatically records all trace data generated from user interactions with an LLM application into MyScale Cloud or MyScaleDB. Developers can then use the Grafana Dashboard to visualize this stored trace data, facilitating comprehensive debugging and analysis of the LLM application.
+Additionally, this trace data can be fed into evaluation framework like Ragas for further analysis, aiding in the optimization of the application.
+
+Therefore, MyScale Telemetry is invaluable for developers, offering a powerful tool for debugging and enhancing LLM applications with minimal performance impact. It provides comprehensive observability insights, allowing developers to deeply understand their applications' behavior and performance.
 
 ## Observability
 
@@ -127,7 +136,11 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
 
-### Acknowledgment
+## Roadmap
+
+* [ ] Extend Support for Additional LLM Application Frameworks and Providers
+
+## Acknowledgment
 
 We give special thanks for these open-source projects:
 
