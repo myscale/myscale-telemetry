@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="myscale-telemetry",
-    version="0.1.4",
+    version="0.1.5",
     description="Open-source observability for your LLM application.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -18,7 +18,8 @@ setup(
         "backoff>=2.2.1",
         "langchain>=0.2.0",
         "langchain-community>=0.2.0",
-        "clickhouse-connect>=0.7.8"
+        "clickhouse-connect>=0.7.8",
+        "tiktoken>=0.7.0"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

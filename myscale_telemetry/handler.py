@@ -1,6 +1,7 @@
 import logging
 import os
 import datetime
+import tiktoken
 from typing import Any, Dict, List, Union, Optional, Sequence, cast
 from uuid import UUID
 
@@ -71,11 +72,12 @@ def _convert_message_to_dict(message: BaseMessage, prefix_key: str) -> Dict[str,
     return {}
 
 
-def _extract_resource_attributes(serialized: Dict[str, Any]) -> Dict[str, str]:
+def _extract_resource_attributes(metadata: Dict[str, Any], serialized: Dict[str, Any]) -> Dict[str, str]:
     """Extract resource attributes from serialized data."""
     resource_attributes: Dict[str, str] = {}
 
     flat_dict = flatten_dict(serialized)
+    flat_dict.update(metadata)
     for resource_key, resource_val in flat_dict.items():
         if isinstance(resource_val, str) and resource_val != "":
             resource_attributes.update({resource_key: resource_val})
@@ -113,6 +115,11 @@ def _extract_span_attributes(data: Any, **kwargs: Any) -> Dict[str, str]:
 
     return span_attributes
 
+def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
 
 class MyScaleCallbackHandler(BaseCallbackHandler):
     """Callback Handler for MyScale.
@@ -130,6 +137,9 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         database_name (str): The name of the database to use.
         table_name (str): The name of the table to use.
         log_level (int): The logging level.
+        force_count_tokens (bool): Forces the calculation of LLM token usage,
+                                   useful when OpenAI LLM streaming is enabled
+                                   and token usage is not returned.
 
     This handler utilizes callback methods to extract various elements such as
     questions, retrieved documents, prompts, and messages from each callback
@@ -151,6 +161,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         database_name: str = "otel",
         table_name: str = "otel_traces",
         log_level: int = logging.INFO,
+        force_count_tokens: bool = False,
     ) -> None:
         """Set up the MyScale client and the TaskManager,
         which is responsible for uploading data to the MyScale vector database."""
@@ -175,6 +186,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             password=self.myscale_password,
         )
 
+        self.force_count_tokens = force_count_tokens
         self._task_manager = TaskManager(
             client=self.myscale_client,
             threads=threads,
@@ -233,7 +245,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind=kind,
                 span_attributes=span_attributes,
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
@@ -290,6 +302,16 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
             name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+            span_attributes = _extract_span_attributes(prompts, **kwargs)
+
+            if self.force_count_tokens:
+                prompt_tokens = 0
+                for i in range(len(prompts)):
+                    content_key = "prompts." + str(i) + ".content"
+                    if content_key in span_attributes:
+                        prompt_tokens += num_tokens_from_string(span_attributes[content_key])
+
+                span_attributes["prompt_tokens"] = str(prompt_tokens)
 
             self._task_manager.create_span(
                 trace_id=trace_id,
@@ -298,8 +320,8 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 start_time=get_timestamp(),
                 name=name,
                 kind="llm",
-                span_attributes=_extract_span_attributes(prompts, **kwargs),
-                resource_attributes=_extract_resource_attributes(serialized),
+                span_attributes=span_attributes,
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
         except Exception as e:
             self._log.exception("An error occurred in on_llm_start: %s", e)
@@ -318,7 +340,6 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         )
         try:
             span_attributes: Dict[str, str] = {}
-
             for i, generation in enumerate(response.generations):
                 generation = generation[0]
                 prefix_key = "completions." + str(i) + "."
@@ -329,16 +350,25 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 else:
                     span_attributes[f"{prefix_key}content"] = generation.text
 
-            if response.llm_output is not None and isinstance(
-                response.llm_output, Dict
-            ):
-                token_usage = response.llm_output["token_usage"]
-                if token_usage is not None:
-                    span_attributes["prompt_tokens"] = str(token_usage["prompt_tokens"])
-                    span_attributes["total_tokens"] = str(token_usage["total_tokens"])
-                    span_attributes["completion_tokens"] = str(
-                        token_usage["completion_tokens"]
-                    )
+            if self.force_count_tokens:
+                completion_tokens = 0
+                for i in range(len(response.generations)):
+                    content_key = "completions." + str(i) + ".content"
+                    if content_key in span_attributes:
+                        completion_tokens += num_tokens_from_string(span_attributes[content_key])
+
+                span_attributes["completion_tokens"] = str(completion_tokens)
+            else:
+                if response.llm_output is not None and isinstance(
+                        response.llm_output, Dict
+                ):
+                    token_usage = response.llm_output["token_usage"]
+                    if token_usage is not None:
+                        span_attributes["prompt_tokens"] = str(token_usage["prompt_tokens"])
+                        span_attributes["total_tokens"] = str(token_usage["total_tokens"])
+                        span_attributes["completion_tokens"] = str(
+                            token_usage["completion_tokens"]
+                        )
 
             self._task_manager.end_span(
                 span_id=run_id,
@@ -346,6 +376,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 span_attributes=span_attributes,
                 status_code=STATUS_SUCCESS,
                 status_message="",
+                force_count_tokens=self.force_count_tokens,
             )
 
         except Exception as e:
@@ -373,6 +404,16 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = self._task_manager.get_trace_id()
             name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
 
+            span_attributes = _extract_span_attributes(messages[0], **kwargs)
+            if self.force_count_tokens:
+                prompt_tokens = 0
+                for i in range(len(messages[0])):
+                    content_key = "prompts." + str(i) + ".content"
+                    if content_key in span_attributes:
+                        prompt_tokens += num_tokens_from_string(span_attributes[content_key])
+
+                span_attributes["prompt_tokens"] = str(prompt_tokens)
+
             self._task_manager.create_span(
                 trace_id=trace_id,
                 span_id=run_id,
@@ -380,8 +421,8 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 start_time=get_timestamp(),
                 name=name,
                 kind="llm",
-                span_attributes=_extract_span_attributes(messages[0], **kwargs),
-                resource_attributes=_extract_resource_attributes(serialized),
+                span_attributes=span_attributes,
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
         except Exception as e:
             self._log.exception("An error occurred in on_chat_model_start: %s", e)
@@ -416,7 +457,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="retriever",
                 span_attributes={"query": query},
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
@@ -481,7 +522,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 name=name,
                 kind="tool",
                 span_attributes={"input": input_str},
-                resource_attributes=_extract_resource_attributes(serialized),
+                resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
         except Exception as e:
