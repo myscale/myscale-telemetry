@@ -124,3 +124,11 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
    ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png?raw=True)
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
+
+### Acknowledgment
+
+We give special thanks for these open-source projects:
+
+* [LangChain](https://github.com/langchain-ai/langchain): The most popular LLM framework integrated with MyScale Telemetry.
+* [OpenTelemetry](https://opentelemetry.io/): The schema of MyScale Telemetry is inspired by this widely used system telemetry toolset.
+* [MyScaleDB](https://github.com/myscale/MyScaleDB) and [ClickHouse](https://github.com/ClickHouse/ClickHouse): Data collected by MyScale Telemetry can be stored in either of these databases.
