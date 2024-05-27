@@ -127,7 +127,11 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
 
-### Acknowledgment
+## Roadmap
+
+* [ ] Extend Support for Additional LLM Application Frameworks and Providers
+
+## Acknowledgment
 
 We give special thanks for these open-source projects:
 
