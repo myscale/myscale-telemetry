@@ -2,7 +2,9 @@
 
 The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in [MyScaleDB](https://github.com/myscale/MyScaleDB) or ClickHouse. This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
 
-![Workflow of MyScale Telemetry](./assets/workflow.png)
+<p align="center">
+<img src="./assets/workflow.png" width=700 alt="Workflow of MyScale Telemetry">
+</p>
 
 ## Installation
 
@@ -130,7 +132,9 @@ The MyScale Trace Dashboard provides comprehensive insights into the runtime beh
 
 ## Roadmap
 
-* [ ] Extend Support for Additional LLM Application Frameworks and Providers
+* [ ] Support for more LLM frameworks
+* [ ] Support LLM tracing directly
+* [ ] Extend to end-to-end GenAI system observability
 
 ## Acknowledgment
 
