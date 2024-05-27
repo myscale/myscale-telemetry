@@ -127,9 +127,8 @@ The MyScale Trace Dashboard provides comprehensive insights into the runtime beh
 
 ### Acknowledgment
 
-MyScale Telemetry acknowledges the following open-source projects:
+We give special thanks for these open-source projects:
 
-- [LangChain](https://github.com/langchain-ai/langchain): MyScale Telemetry is deeply integrated with this project.
-- [OpenTelemetry](https://opentelemetry.io/): The schema of MyScale Telemetry draws inspiration from this initiative.
-- [MyScaleDB](https://github.com/myscale/MyScaleDB) and [ClickHouse](https://github.com/ClickHouse/ClickHouse): Data collected by MyScale Telemetry can be stored in either MyScaleDB or ClickHouse.
-
+* [LangChain](https://github.com/langchain-ai/langchain): The most popular LLM framework integrated with MyScale Telemetry.
+* [OpenTelemetry](https://opentelemetry.io/): The schema of MyScale Telemetry is inspired by this widely used system telemetry toolset.
+* [MyScaleDB](https://github.com/myscale/MyScaleDB) and [ClickHouse](https://github.com/ClickHouse/ClickHouse): Data collected by MyScale Telemetry can be stored in either of these databases.
