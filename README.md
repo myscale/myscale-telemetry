@@ -93,14 +93,6 @@ When invoking `MyScaleCallbackHandler()`, you can specify several parameters to 
 * `force_count_tokens`: Forces the calculation of LLM token usage, useful when OpenAI LLM streaming is enabled and token usage is not returned (default: False)
 * `encoding_name`: Name of the encoding used by tiktoken. This is only relevant if `force_count_tokens` is set to True (default: cl100k_base)
 
-## Workflow Overview
-
-![workflow](https://github.com/myscale/myscale-telemetry/blob/main/assets/workflow.png?raw=True)
-MyScale Telemetry automatically records all trace data generated from user interactions with an LLM application into MyScale Cloud or MyScaleDB. Developers can then use the Grafana Dashboard to visualize this stored trace data, facilitating comprehensive debugging and analysis of the LLM application.
-Additionally, this trace data can be fed into evaluation framework like Ragas for further analysis, aiding in the optimization of the application.
-
-Therefore, MyScale Telemetry is invaluable for developers, offering a powerful tool for debugging and enhancing LLM applications with minimal performance impact. It provides comprehensive observability insights, allowing developers to deeply understand their applications' behavior and performance.
-
 ## Observability
 
 To display trace data collected through the MyScale Telemetry from the LLM Application runtime easily and clearly, we also provide a [Grafana Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json).
@@ -119,20 +111,20 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 1. **Add a new ClickHouse Data Source in Grafana:**
 
    In the Grafana Data Source settings, add a new ClickHouse Data Source. Enter the Server Address, Server Port, Username, and Password to match those of your MyScale Cloud/MyScaleDB.
-   ![data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/add_data_source.png?raw=True)
-   ![config_data_source](https://github.com/myscale/myscale-telemetry/blob/main/assets/config_data_source.png?raw=True)
+   ![Add a data source](./assets/add_data_source.png)
+   ![Configure the data source](./assets/config_data_source.png)
 
 2. **Import the MyScale Trace Dashboard:**
 
    Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json?raw=True).
 
-   ![import_dashboard](https://github.com/myscale/myscale-telemetry/blob/main/assets/import_dashboard.png?raw=True)
+   ![Import the MyScale Trace Dashboard](./assets/import_dashboard.png)
 
 3. **Configure the Dashboard:**
 
    After importing, select the MyScale Cluster (ClickHouse Data Source Name), the database name, table name, and TraceID of the trace you want to analyze. The dashboard will then display the Traces Table and the Trace Details Panel of the selected trace.
 
-   ![trace_dashboard_overview](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png?raw=True)
+   ![Dashboard Example](./assets/dashboard.png)
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
 
