@@ -142,10 +142,15 @@ class TaskManager:
         span_attributes: Dict[str, str],
         status_code: str,
         status_message: Optional[str] = None,
+        force_count_tokens: bool = False,
     ) -> None:
         """End a span and add its data to the queue."""
         if span_id not in self.spans:
             raise ValueError(f"Span with {span_id} id not exists")
+
+        if force_count_tokens:
+            span_attributes["total_tokens"] = str(
+                int(span_attributes.get("completion_tokens", 0)) + int(self.spans[span_id].span_attributes.get("prompt_tokens", 0)))
 
         self.spans[span_id].update(
             end_time, span_attributes, status_code, status_message

@@ -88,6 +88,7 @@ When invoking `MyScaleCallbackHandler()`, you can specify several parameters to 
 * `upload_interval`: Upload interval in seconds (default: 0.5)
 * `database_name`: Name of the trace database (default: "otel")
 * `table_name`: Name of the trace table (default: "otel_traces")
+* `force_count_tokens`: Forces the calculation of LLM token usage, useful when OpenAI LLM streaming is enabled and token usage is not returned (default: False)
 
 ## Observability
 
