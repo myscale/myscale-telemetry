@@ -3,7 +3,7 @@
 The MyScale Telemetry is a powerful tool designed to enhance the observability of LLM applications by capturing trace data from LangChain-based applications and storing it in [MyScaleDB](https://github.com/myscale/MyScaleDB) or ClickHouse. This enables developers to diagnose issues, optimize performance, and gain deeper insights into their applications' behavior.
 
 <p align="center">
-<img src="./assets/workflow.png" width=700 alt="Workflow of MyScale Telemetry">
+<img src="https://github.com/myscale/myscale-telemetry/blob/main/assets/workflow.png?raw=True" width=700 alt="Workflow of MyScale Telemetry">
 </p>
 
 ## Installation
@@ -113,20 +113,20 @@ Once you have Grafana, installed the ClickHouse data source plugin, and have a M
 1. **Add a new ClickHouse Data Source in Grafana:**
 
    In the Grafana Data Source settings, add a new ClickHouse Data Source. Enter the Server Address, Server Port, Username, and Password to match those of your MyScale Cloud/MyScaleDB.
-   ![Add a data source](./assets/add_data_source.png)
-   ![Configure the data source](./assets/config_data_source.png)
+   ![Add a data source](https://github.com/myscale/myscale-telemetry/blob/main/assets/add_data_source.png?raw=True)
+   ![Configure the data source](https://github.com/myscale/myscale-telemetry/blob/main/assets/config_data_source.png?raw=True)
 
 2. **Import the MyScale Trace Dashboard:**
 
    Once the ClickHouse Data Source is added, you can import the [MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/dashboard/grafana_myscale_trace_dashboard.json?raw=True).
 
-   ![Import the MyScale Trace Dashboard](./assets/import_dashboard.png)
+   ![Import the MyScale Trace Dashboard](https://github.com/myscale/myscale-telemetry/blob/main/assets/import_dashboard.png?raw=True)
 
 3. **Configure the Dashboard:**
 
    After importing, select the MyScale Cluster (ClickHouse Data Source Name), the database name, table name, and TraceID of the trace you want to analyze. The dashboard will then display the Traces Table and the Trace Details Panel of the selected trace.
 
-   ![Dashboard Example](./assets/dashboard.png)
+   ![Dashboard Example](https://github.com/myscale/myscale-telemetry/blob/main/assets/dashboard.png?raw=True)
 
 The MyScale Trace Dashboard provides comprehensive insights into the runtime behavior of your LLM applications, similar to LangSmith. It displays critical information that helps in debugging, optimizing, and understanding the performance of your applications.
 
