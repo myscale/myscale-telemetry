@@ -411,10 +411,11 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = self._task_manager.get_trace_id()
             name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
 
-            span_attributes = _extract_span_attributes(messages[0], **kwargs)
+            flattened_messages = [item for sublist in messages for item in sublist]
+            span_attributes = _extract_span_attributes(flattened_messages, **kwargs)
             if self.force_count_tokens:
                 prompt_tokens = 0
-                for i in range(len(messages[0])):
+                for i in range(len(flattened_messages)):
                     content_key = "prompts." + str(i) + ".content"
                     if content_key in span_attributes:
                         prompt_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
@@ -521,6 +522,10 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = self._task_manager.get_trace_id()
             name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
 
+            span_attributes = {}
+            if isinstance(input_str, str):
+                span_attributes["input"] = input_str
+
             self._task_manager.create_span(
                 trace_id=trace_id,
                 span_id=run_id,
@@ -528,7 +533,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 start_time=get_timestamp(),
                 name=name,
                 kind="tool",
-                span_attributes={"input": input_str},
+                span_attributes=span_attributes,
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
 
@@ -548,10 +553,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             "on tool end run_id: %s parent_run_id: %s", run_id, parent_run_id
         )
         try:
+            span_attributes = {}
+            if isinstance(output, str):
+                span_attributes["output"] = output
+
             self._task_manager.end_span(
                 span_id=run_id,
                 end_time=get_timestamp(),
-                span_attributes={"output": output},
+                span_attributes=span_attributes,
                 status_code=STATUS_SUCCESS,
                 status_message="",
             )
