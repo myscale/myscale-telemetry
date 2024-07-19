@@ -25,7 +25,7 @@ from myscale_telemetry.handler import MyScaleCallbackHandler
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import MyScale
+from langchain_community.vectorstores import MyScale, MyScaleSettings
 from langchain_core.runnables import RunnableConfig
 
 # set up the environment variables for OpenAI and MyScale Cloud/MyScaleDB
@@ -35,7 +35,8 @@ os.environ["MYSCALE_PORT"] = "YOUR_MYSCALE_PORT"
 os.environ["MYSCALE_USERNAME"] = "YOUR_USERNAME"
 os.environ["MYSCALE_PASSWORD"] = "YOUR_MYSCALE_PASSWORD"
 
-vectorstore = MyScale.from_texts(["harrison worked at kensho"], embedding=OpenAIEmbeddings())
+# for MyScale cloud, you can set index_type="MSTG" for better performance compared to SCANN
+vectorstore = MyScale.from_texts(["harrison worked at kensho"], embedding=OpenAIEmbeddings(), config=MyScaleSettings(index_type="SCANN"))
 retriever = vectorstore.as_retriever()
 model = ChatOpenAI()
 template = """Answer the question based only on the following context:
