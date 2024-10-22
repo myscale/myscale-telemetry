@@ -76,7 +76,7 @@ def _extract_resource_attributes(metadata: Dict[str, Any], serialized: Dict[str,
     """Extract resource attributes from serialized data."""
     resource_attributes: Dict[str, str] = {}
 
-    flat_dict = flatten_dict(serialized)
+    flat_dict = flatten_dict(serialized) if serialized else {}
     flat_dict.update(metadata)
     for resource_key, resource_val in flat_dict.items():
         if isinstance(resource_val, str) and resource_val != "":
@@ -207,7 +207,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
 
     def on_chain_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         inputs: Dict[str, Any],
         *,
         run_id: UUID,
@@ -229,7 +229,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 else:
                     trace_id = self._task_manager.get_trace_id()
 
-            name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+            if "name" in kwargs:
+                name = kwargs["name"]
+            else:
+                if serialized:
+                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                else:
+                    name = "Unknown"
+
             if name in ("AgentExecutor", "PlanAndExecute"):
                 kind = "agent"
             else:
@@ -241,7 +248,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 span_attributes.update(_extract_span_attributes(inputs))
 
-            if name == "ChatPromptTemplate":
+            if name == "ChatPromptTemplate" and serialized:
                 span_attributes.update(_extract_prompt_templates(serialized))
 
             self._task_manager.create_span(
@@ -290,7 +297,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
 
     def on_llm_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         prompts: List[str],
         *,
         run_id: UUID,
@@ -308,7 +315,15 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = metadata["trace_id"]
             else:
                 trace_id = self._task_manager.get_trace_id()
-            name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+
+            if "name" in kwargs:
+                name = kwargs["name"]
+            else:
+                if serialized:
+                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                else:
+                    name = "Unknown"
+
             span_attributes = _extract_span_attributes(prompts, **kwargs)
 
             if self.force_count_tokens:
@@ -437,7 +452,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
 
     def on_retriever_start(
         self,
-        serialized: Dict[str, Any],
+        serialized: Optional[Dict[str, Any]],
         query: str,
         *,
         run_id: UUID,
@@ -455,7 +470,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = metadata["trace_id"]
             else:
                 trace_id = self._task_manager.get_trace_id()
-            name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+
+            if "name" in kwargs:
+                name = kwargs["name"]
+            else:
+                if serialized:
+                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                else:
+                    name = "Unknown"
 
             self._task_manager.create_span(
                 trace_id=trace_id,
@@ -520,7 +542,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = metadata["trace_id"]
             else:
                 trace_id = self._task_manager.get_trace_id()
-            name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+
+            if "name" in kwargs:
+                name = kwargs["name"]
+            else:
+                if serialized:
+                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                else:
+                    name = "Unknown"
 
             span_attributes = {}
             if isinstance(input_str, str):

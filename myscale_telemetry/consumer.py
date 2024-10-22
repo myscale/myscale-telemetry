@@ -38,15 +38,15 @@ class Consumer(Thread):
     _table_name: str
 
     def __init__(
-        self,
-        identifier: int,
-        queue: Queue,
-        client: Client,
-        upload_interval: float,
-        max_retries: int,
-        max_batch_size: int,
-        database_name: str,
-        table_name: str,
+            self,
+            identifier: int,
+            queue: Queue,
+            client: Client,
+            upload_interval: float,
+            max_retries: int,
+            max_batch_size: int,
+            database_name: str,
+            table_name: str,
     ) -> None:
         """Initialize the consumer thread."""
         Thread.__init__(self, daemon=True)
@@ -136,7 +136,7 @@ SETTINGS index_granularity = 8192"""
 
     def upload_batch(self, batch_data: List[Any]) -> None:
         """Upload a batch of items to MyScale with retries."""
-        self._log.debug("uploading batch of %d items to MyScale", len(batch_data))
+        self._log.debug(f"uploading batch data: {batch_data} to MyScale", batch_data)
 
         @backoff.on_exception(backoff.expo, Exception, max_tries=self._max_retries)
         def insert_with_backoff(batch_data_: List[Any]):
