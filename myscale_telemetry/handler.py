@@ -588,11 +588,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         self._log.debug(
             "on tool end run_id: %s parent_run_id: %s", run_id, parent_run_id
         )
+        span_attributes = {}
         try:
-            span_attributes = {}
-            if isinstance(output, str):
-                span_attributes["output"] = output
+            span_attributes["output"] = str(output)
+        except Exception as e:
+            self._log.warning(f"failed to convert tool output {span_attributes['output']} to string, "
+                              f"got error {str(e)}")
 
+        try:
             self._task_manager.end_span(
                 span_id=run_id,
                 end_time=get_timestamp(),
