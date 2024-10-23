@@ -229,11 +229,11 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 else:
                     trace_id = self._task_manager.get_trace_id()
 
-            if "name" in kwargs:
-                name = kwargs["name"]
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
             else:
-                if serialized:
-                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                if "name" in kwargs and kwargs["name"]:
+                    name = kwargs["name"]
                 else:
                     name = "Unknown"
 
@@ -316,11 +316,11 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if "name" in kwargs:
-                name = kwargs["name"]
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
             else:
-                if serialized:
-                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                if "name" in kwargs and kwargs["name"]:
+                    name = kwargs["name"]
                 else:
                     name = "Unknown"
 
@@ -424,7 +424,14 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 trace_id = metadata["trace_id"]
             else:
                 trace_id = self._task_manager.get_trace_id()
-            name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+            else:
+                if "name" in kwargs and kwargs["name"]:
+                    name = kwargs["name"]
+                else:
+                    name = "Unknown"
 
             flattened_messages = [item for sublist in messages for item in sublist]
             span_attributes = _extract_span_attributes(flattened_messages, **kwargs)
@@ -471,11 +478,11 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if "name" in kwargs:
-                name = kwargs["name"]
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
             else:
-                if serialized:
-                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                if "name" in kwargs and kwargs["name"]:
+                    name = kwargs["name"]
                 else:
                     name = "Unknown"
 
@@ -543,11 +550,11 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if "name" in kwargs:
-                name = kwargs["name"]
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
             else:
-                if serialized:
-                    name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+                if "name" in kwargs and kwargs["name"]:
+                    name = kwargs["name"]
                 else:
                     name = "Unknown"
 
