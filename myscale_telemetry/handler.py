@@ -1,22 +1,23 @@
 import logging
 import os
+import json
 import datetime
-import tiktoken
 from typing import Any, Dict, List, Union, Optional, Sequence, cast
 from uuid import UUID
-
+import tiktoken
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain_core.documents import Document
+from langchain.schema.document import Document
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
+    FunctionMessage,
 )
 from langchain_core.outputs import LLMResult, ChatGeneration
 from langchain_community.callbacks.utils import flatten_dict
-
 from .task_manager import TaskManager
 
 STATUS_SUCCESS = "STATUS_CODE_SUCCESS"
@@ -48,59 +49,77 @@ def _extract_prompt_templates(serialized) -> Dict[str, str]:
 
 def _convert_message_to_dict(message: BaseMessage, prefix_key: str) -> Dict[str, str]:
     """Convert a message to a dictionary with a specified prefix key."""
-    if isinstance(message, HumanMessage):
+    role_mapping = {
+        HumanMessage: "user",
+        AIMessage: "assistant",
+        SystemMessage: "system",
+        ToolMessage: "tool",
+        FunctionMessage: "function",
+    }
+
+    role = None
+
+    for msg_type, mapped_role in role_mapping.items():
+        if isinstance(message, msg_type):
+            role = mapped_role
+            break
+
+    if role is None and isinstance(message, ChatMessage):
+        role = message.role
+
+    if role is not None:
         return {
-            prefix_key + "role": "user",
-            prefix_key + "content": cast(str, message.content),
-        }
-    if isinstance(message, AIMessage):
-        return {
-            prefix_key + "role": "assistant",
-            prefix_key + "content": cast(str, message.content),
-        }
-    if isinstance(message, SystemMessage):
-        return {
-            prefix_key + "role": "system",
-            prefix_key + "content": cast(str, message.content),
-        }
-    if isinstance(message, ChatMessage):
-        return {
-            prefix_key + "role": message.role,
-            prefix_key + "content": cast(str, message.content),
+            f"{prefix_key}role": role,
+            f"{prefix_key}content": cast(str, message.content),
         }
 
     return {}
 
 
-def _extract_resource_attributes(metadata: Dict[str, Any], serialized: Dict[str, Any]) -> Dict[str, str]:
+def _extract_resource_attributes(
+    metadata: Dict[str, Any], serialized: Dict[str, Any]
+) -> Dict[str, str]:
     """Extract resource attributes from serialized data."""
     resource_attributes: Dict[str, str] = {}
 
     flat_dict = flatten_dict(serialized) if serialized else {}
     flat_dict.update(metadata)
     for resource_key, resource_val in flat_dict.items():
-        if isinstance(resource_val, str) and resource_val != "":
-            resource_attributes.update({resource_key: resource_val})
+        resource_attributes.update({resource_key: _serialize_value(resource_val)})
 
     return resource_attributes
 
 
+def _serialize_value(value: Any) -> str:
+    """Serialize the given value to a string."""
+    if isinstance(value, str):
+        return value
+    try:
+        return json.dumps(value)
+    except (TypeError, ValueError):
+        try:
+            return str(value)
+        except Exception:
+            return f"<unserializable object: {type(value).__name__}>"
+
+
 def _extract_span_attributes(data: Any, **kwargs: Any) -> Dict[str, str]:
-    """Extract span attributes from the given data."""
+    """Extract span attributes from the given data, converting serializable objects to strings."""
+
     span_attributes: Dict[str, str] = {}
 
     if isinstance(data, dict):
         for attributes_key, attributes_val in data.items():
-            if isinstance(attributes_val, str) and attributes_val != "":
-                span_attributes[attributes_key] = attributes_val
+            if isinstance(attributes_key, str):
+                span_attributes[attributes_key] = _serialize_value(attributes_val)
     elif isinstance(data, list):
         for i, item in enumerate(data):
-            if isinstance(item, str):
-                span_attributes[f"prompts.{i}.content"] = item
-            elif isinstance(item, BaseMessage):
+            if isinstance(item, BaseMessage):
                 span_attributes.update(_convert_message_to_dict(item, f"prompts.{i}."))
             elif isinstance(item, Document):
                 span_attributes[f"documents.{i}.content"] = item.page_content
+            else:
+                span_attributes[f"items.{i}.content"] = _serialize_value(item)
 
     params = kwargs.get("invocation_params", {})
     if params:
@@ -114,6 +133,19 @@ def _extract_span_attributes(data: Any, **kwargs: Any) -> Dict[str, str]:
         )
 
     return span_attributes
+
+
+def _get_langchain_run_name(serialized: Optional[Dict[str, Any]], **kwargs: Any) -> str:
+    """Retrieve the name of a serialized LangChain runnable."""
+    if serialized:
+        name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
+    else:
+        if "name" in kwargs and kwargs["name"]:
+            name = kwargs["name"]
+        else:
+            name = "Unknown"
+
+    return name
 
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
@@ -138,7 +170,6 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         upload_interval (float): The interval between uploads in seconds.
         database_name (str): The name of the database to use.
         table_name (str): The name of the table to use.
-        log_level (int): The logging level.
         force_count_tokens (bool): Forces the calculation of LLM token usage,
                                    useful when OpenAI LLM streaming is enabled
                                    and token usage is not returned.
@@ -164,7 +195,6 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         upload_interval: float = 0.5,
         database_name: str = "otel",
         table_name: str = "otel_traces",
-        log_level: int = logging.INFO,
         force_count_tokens: bool = False,
         encoding_name: str = "cl100k_base",
     ) -> None:
@@ -178,8 +208,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 "Please install it with `pip install clickhouse-connect`."
             ) from exc
 
-        logging.basicConfig(level=log_level)
-        self._log = logging.getLogger("callback")
+        self._log = logging.getLogger(__name__)
         self.myscale_host = myscale_host or os.getenv("MYSCALE_HOST")
         self.myscale_port = myscale_port or int(os.getenv("MYSCALE_PORT", "443"))
         self.myscale_username = myscale_username or os.getenv("MYSCALE_USERNAME")
@@ -229,24 +258,13 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 else:
                     trace_id = self._task_manager.get_trace_id()
 
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
-            else:
-                if "name" in kwargs and kwargs["name"]:
-                    name = kwargs["name"]
-                else:
-                    name = "Unknown"
-
-            if name in ("AgentExecutor", "PlanAndExecute"):
-                kind = "agent"
-            else:
-                kind = "chain"
+            name = _get_langchain_run_name(serialized, **kwargs)
 
             span_attributes = {}
             if isinstance(inputs, str):
                 span_attributes["input"] = inputs
             else:
-                span_attributes.update(_extract_span_attributes(inputs))
+                span_attributes.update(_extract_span_attributes(inputs, **kwargs))
 
             if name == "ChatPromptTemplate" and serialized:
                 span_attributes.update(_extract_prompt_templates(serialized))
@@ -257,7 +275,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 parent_span_id=parent_run_id,
                 start_time=get_timestamp(),
                 name=name,
-                kind=kind,
+                kind="chain",
                 span_attributes=span_attributes,
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
             )
@@ -281,8 +299,8 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             span_attributes = {}
             if isinstance(outputs, str):
                 span_attributes["output"] = outputs
-            elif isinstance(outputs, dict):
-                span_attributes.update(_extract_span_attributes(outputs))
+            else:
+                span_attributes.update(_extract_span_attributes(outputs, **kwargs))
 
             self._task_manager.end_span(
                 span_id=run_id,
@@ -316,22 +334,15 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
-            else:
-                if "name" in kwargs and kwargs["name"]:
-                    name = kwargs["name"]
-                else:
-                    name = "Unknown"
-
             span_attributes = _extract_span_attributes(prompts, **kwargs)
-
             if self.force_count_tokens:
                 prompt_tokens = 0
                 for i in range(len(prompts)):
                     content_key = "prompts." + str(i) + ".content"
                     if content_key in span_attributes:
-                        prompt_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
+                        prompt_tokens += num_tokens_from_string(
+                            span_attributes[content_key], self.encoding_name
+                        )
 
                 span_attributes["prompt_tokens"] = str(prompt_tokens)
 
@@ -340,7 +351,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 span_id=run_id,
                 parent_span_id=parent_run_id,
                 start_time=get_timestamp(),
-                name=name,
+                name=_get_langchain_run_name(serialized, **kwargs),
                 kind="llm",
                 span_attributes=span_attributes,
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
@@ -377,17 +388,23 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 for i in range(len(response.generations)):
                     content_key = "completions." + str(i) + ".content"
                     if content_key in span_attributes:
-                        completion_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
+                        completion_tokens += num_tokens_from_string(
+                            span_attributes[content_key], self.encoding_name
+                        )
 
                 span_attributes["completion_tokens"] = str(completion_tokens)
             else:
                 if response.llm_output is not None and isinstance(
-                        response.llm_output, Dict
+                    response.llm_output, Dict
                 ):
                     token_usage = response.llm_output["token_usage"]
                     if token_usage is not None:
-                        span_attributes["prompt_tokens"] = str(token_usage["prompt_tokens"])
-                        span_attributes["total_tokens"] = str(token_usage["total_tokens"])
+                        span_attributes["prompt_tokens"] = str(
+                            token_usage["prompt_tokens"]
+                        )
+                        span_attributes["total_tokens"] = str(
+                            token_usage["total_tokens"]
+                        )
                         span_attributes["completion_tokens"] = str(
                             token_usage["completion_tokens"]
                         )
@@ -425,14 +442,6 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
-            else:
-                if "name" in kwargs and kwargs["name"]:
-                    name = kwargs["name"]
-                else:
-                    name = "Unknown"
-
             flattened_messages = [item for sublist in messages for item in sublist]
             span_attributes = _extract_span_attributes(flattened_messages, **kwargs)
             if self.force_count_tokens:
@@ -440,7 +449,9 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 for i in range(len(flattened_messages)):
                     content_key = "prompts." + str(i) + ".content"
                     if content_key in span_attributes:
-                        prompt_tokens += num_tokens_from_string(span_attributes[content_key], self.encoding_name)
+                        prompt_tokens += num_tokens_from_string(
+                            span_attributes[content_key], self.encoding_name
+                        )
 
                 span_attributes["prompt_tokens"] = str(prompt_tokens)
 
@@ -449,7 +460,7 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
                 span_id=run_id,
                 parent_span_id=parent_run_id,
                 start_time=get_timestamp(),
-                name=name,
+                name=_get_langchain_run_name(serialized, **kwargs),
                 kind="llm",
                 span_attributes=span_attributes,
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
@@ -478,20 +489,12 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
-            else:
-                if "name" in kwargs and kwargs["name"]:
-                    name = kwargs["name"]
-                else:
-                    name = "Unknown"
-
             self._task_manager.create_span(
                 trace_id=trace_id,
                 span_id=run_id,
                 parent_span_id=parent_run_id,
                 start_time=get_timestamp(),
-                name=name,
+                name=_get_langchain_run_name(serialized, **kwargs),
                 kind="retriever",
                 span_attributes={"query": query},
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
@@ -550,24 +553,18 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
             else:
                 trace_id = self._task_manager.get_trace_id()
 
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["Unknown"])[-1])
-            else:
-                if "name" in kwargs and kwargs["name"]:
-                    name = kwargs["name"]
-                else:
-                    name = "Unknown"
-
             span_attributes = {}
             if isinstance(input_str, str):
                 span_attributes["input"] = input_str
+            else:
+                span_attributes.update(_extract_span_attributes(input_str, **kwargs))
 
             self._task_manager.create_span(
                 trace_id=trace_id,
                 span_id=run_id,
                 parent_span_id=parent_run_id,
                 start_time=get_timestamp(),
-                name=name,
+                name=_get_langchain_run_name(serialized, **kwargs),
                 kind="tool",
                 span_attributes=span_attributes,
                 resource_attributes=_extract_resource_attributes(metadata, serialized),
@@ -588,14 +585,12 @@ class MyScaleCallbackHandler(BaseCallbackHandler):
         self._log.debug(
             "on tool end run_id: %s parent_run_id: %s", run_id, parent_run_id
         )
-        span_attributes = {}
         try:
-            span_attributes["output"] = str(output)
-        except Exception as e:
-            self._log.warning(f"failed to convert tool output {span_attributes['output']} to string, "
-                              f"got error {str(e)}")
-
-        try:
+            span_attributes = {}
+            if isinstance(output, str):
+                span_attributes["output"] = output
+            else:
+                span_attributes.update(_extract_span_attributes(output, **kwargs))
             self._task_manager.end_span(
                 span_id=run_id,
                 end_time=get_timestamp(),

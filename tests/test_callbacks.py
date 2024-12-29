@@ -32,13 +32,13 @@ def test_callback_handler():
     prompt = ChatPromptTemplate.from_template(template)
 
     chain = (
-            {
-                "context": itemgetter("question") | retriever,
-                "question": itemgetter("question"),
-            }
-            | prompt
-            | model
-            | StrOutputParser()
+        {
+            "context": itemgetter("question") | retriever,
+            "question": itemgetter("question"),
+        }
+        | prompt
+        | model
+        | StrOutputParser()
     )
 
     test_database = "trace_test"
@@ -68,9 +68,9 @@ def test_callback_handler():
     )
 
     assert (
-            callback_handler.myscale_client.query(
-                f"SELECT count(*) FROM {test_database}.{test_table} WHERE TraceId = '{trace_id}' "
-                f"AND StatusCode = 'STATUS_CODE_SUCCESS'"
-            ).result_columns[0][0]
-            == 9
+        callback_handler.myscale_client.query(
+            f"SELECT count(*) FROM {test_database}.{test_table} WHERE TraceId = '{trace_id}' "
+            f"AND StatusCode = 'STATUS_CODE_SUCCESS'"
+        ).result_columns[0][0]
+        == 9
     )

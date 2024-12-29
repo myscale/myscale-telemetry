@@ -1,0 +1,16 @@
+[pylint]
+good-names=id, df
+
+[MASTER]
+extension-pkg-allow-list=pydantic
+
+[MESSAGES CONTROL]
+disable=C0114,R0903,R0913,R0917,C0415,W0703,W0621,E1137,R0902,E0611
+
+[DESIGN]
+max-locals=20
+max-branches=20
+max-statements=60
+
+[SIMILARITIES]
+min-similarity-lines=10
