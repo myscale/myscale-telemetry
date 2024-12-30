@@ -95,7 +95,7 @@ def _serialize_value(value: Any) -> str:
     if isinstance(value, str):
         return value
     try:
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     except (TypeError, ValueError):
         try:
             return str(value)
