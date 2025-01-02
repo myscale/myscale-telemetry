@@ -35,7 +35,7 @@ class TaskManager:
          _table_name (str): The name of the table to use.
     """
 
-    _log = logging.getLogger("callback")
+    _log = logging.getLogger(__name__)
     _consumers: List[Consumer]
     _client: Client
     _threads: int
@@ -150,7 +150,9 @@ class TaskManager:
 
         if force_count_tokens:
             span_attributes["total_tokens"] = str(
-                int(span_attributes.get("completion_tokens", 0)) + int(self.spans[span_id].span_attributes.get("prompt_tokens", 0)))
+                int(span_attributes.get("completion_tokens", 0))
+                + int(self.spans[span_id].span_attributes.get("prompt_tokens", 0))
+            )
 
         self.spans[span_id].update(
             end_time, span_attributes, status_code, status_message

@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+    - id: black
+      name: black-formatting
+      entry: black
+      types: [python]
+      exclude: ^main.py
+      language: system
+    - id: pylint
+      name: pylint
+      entry: pylint
+      types: [python]
+      exclude: (^main.py|docs/)
+      language: system
+  #   - id: mypy
+  #     files: api/
+  #     language_version: python3.9
